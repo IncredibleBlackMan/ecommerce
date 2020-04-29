@@ -8,6 +8,7 @@ class UsersController < ApplicationController
     if user_params[:password] != user_params[:confirm_password]
       render json: { error: 'Passwords don\'t match' }, status: :bad_request
     elsif user.save
+      Account.new(account_params(user)).save
       render json: { message: 'User created successfully' }, status: :created
     else
       render json: { errors: user.errors.full_messages }, status: :bad_request
@@ -15,8 +16,9 @@ class UsersController < ApplicationController
   end
 
   def login
-    user = User.find_by(email: user_params[:email].to_s.downcase)
-
+    puts params
+    user = User.find_by(email: params[:email].to_s.downcase)
+    puts user
     if user&.authenticate(params[:password])
       token = JsonWebToken.encode(user_id: user.id)
       render json: { token: token }, status: :ok
@@ -26,6 +28,14 @@ class UsersController < ApplicationController
   end
 
   private
+
+  def account_params(user)
+    {
+        user_id: user.id,
+        role: 'Client',
+        address: 'Input Address'
+    }
+  end
 
   def user_params
     params.require(:user).permit(:username, :email, :password, :confirm_password)
